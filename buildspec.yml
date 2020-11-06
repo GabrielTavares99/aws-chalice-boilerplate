@@ -1,0 +1,33 @@
+version: 0.1
+
+phases:
+  install:
+    commands:
+      - echo "Install Phase..."
+      - sudo pip install --upgrade awscli
+      - aws --version
+      - apt-get update
+      - pip install --upgrade wheel
+      - pip install chalice
+      - pip install -r requirements.txt
+      - chalice package packaged-homolog --stage homolog
+      - chalice package packaged-prod --stage prod
+    finally:
+      - echo "Install Phase Finally..."
+
+  pre_build:
+    commands:
+      - echo "Pre-Build Phase..."
+    finally:
+      - echo "Pre-Build Phase Finally..."
+
+  build:
+    commands:
+      - aws cloudformation package --template-file packaged-homolog/sam.json --s3-bucket ${APP_S3_BUCKET} --output-template-file transformed-homolog.yaml
+      - aws cloudformation package --template-file packaged-prod/sam.json --s3-bucket ${APP_S3_BUCKET} --output-template-file transformed-prod.yaml
+
+artifacts:
+  type: zip
+  files:
+    - transformed-homolog.yaml
+    - transformed-prod.yaml
